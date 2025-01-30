@@ -40,9 +40,10 @@ The system automates parking operations through:
 
 ## ⚙️ Technical Requirements
 - **Hardware:**
-  - Raspberry Pi 4 (barriers + company devices).
-  - RFID readers (e.g., RC522).
-  - LCD display for Raspberry Pi at the exit.
+  - Raspberry Pi
+  - RFID readers
+  - OLED display for Raspberry Pi
+  - Encoders
 - **Software:**
   - Python 3.8+.
   - Flask, SQLAlchemy, RPi.GPIO.

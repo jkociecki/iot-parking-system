@@ -5,8 +5,7 @@ from utils.parking import calculate_parking_fee
 
 gate_bp = Blueprint('gate', __name__)
 
-# Stała konfiguracyjna dla limitu miejsc
-PARKING_CAPACITY = 12  # Możesz dostosować tę wartość
+PARKING_CAPACITY = 12  
 
 @gate_bp.route('/gate')
 @login_required
@@ -89,7 +88,6 @@ def register_entry():
     cursor = conn.cursor(dictionary=True)
     
     try:
-        # Sprawdź czy karta nie jest już używana (nie ma niezakończonego wjazdu)
         cursor.execute("""
             SELECT id FROM parking_entries 
             WHERE rfid_tag = %s AND exit_time IS NULL
@@ -103,7 +101,6 @@ def register_entry():
                 'message': 'Ta karta jest już zarejestrowana na parkingu. Najpierw należy zarejestrować wyjazd.'
             }), 409
 
-        # Sprawdź dostępność miejsc
         cursor.execute("SELECT COUNT(*) as count FROM parking_entries WHERE exit_time IS NULL")
         current_count = cursor.fetchone()['count']
         
@@ -166,7 +163,6 @@ def register_exit():
             
         current_time = datetime.now()
         
-        # Oblicz opłatę używając funkcji z utils
         total_price, duration_hours = calculate_parking_fee(
             entry['entry_time'],
             current_time,
@@ -212,7 +208,6 @@ def get_parking_status():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Pobierz aktualny stan parkingu
     cursor.execute("SELECT COUNT(*) as occupied FROM parking_entries WHERE exit_time IS NULL")
     occupied = cursor.fetchone()['occupied']
     

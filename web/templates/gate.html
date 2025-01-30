@@ -1,0 +1,724 @@
+{% extends "base.html" %} {% block title %}Panel Szlabanu{% endblock %} {% block
+content %}
+<div class="max-w-7xl mx-auto space-y-8">
+  <!-- Header z podsumowaniem -->
+  <header
+    class="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-lg shadow-xl"
+  >
+    <h1 class="text-2xl font-bold text-white mb-2">Panel Kontroli Szlabanu</h1>
+    <p class="text-gray-300">Zarządzaj wjazdami i wyjazdami z parkingu</p>
+  </header>
+
+  <div
+    class="bg-gradient-to-br from-gray-800 to-gray-750 p-6 rounded-xl shadow-xl"
+  >
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-600 rounded-lg">
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white">Stan parkingu</h2>
+          <p class="text-sm text-gray-400">
+            Aktualne obłożenie miejsc parkingowych
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="px-4 py-2 bg-gray-700 rounded-lg">
+          <span class="text-sm text-gray-300">Dostępne miejsca:</span>
+          <span
+            class="ml-2 text-lg font-bold {% if available_spaces < 5 %}text-red-400{% else %}text-green-400{% endif %}"
+          >
+            {{ available_spaces }}/{{ parking_capacity }}
+            <!-- {{ available_spaces }} -->
+          </span>
+        </div>
+        <div class="w-24 h-24 relative">
+          <svg class="w-24 h-24 transform -rotate-90">
+            <circle
+              cx="48"
+              cy="48"
+              r="36"
+              stroke="currentColor"
+              stroke-width="8"
+              fill="transparent"
+              class="text-gray-700"
+            />
+            <circle
+              cx="48"
+              cy="48"
+              r="36"
+              stroke="currentColor"
+              stroke-width="8"
+              fill="transparent"
+              stroke-dasharray="226.19"
+              stroke-dashoffset="{{ (226.19 * (1 - (occupied_spaces / parking_capacity)))|round }}"
+              class="{% if available_spaces < 5 %}text-red-400{% else %}text-green-400{% endif %} transition-all duration-500"
+            />
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-2xl font-bold text-white"
+              >{{ (occupied_spaces / parking_capacity * 100)|round }}%</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Sekcja automatycznego odczytu -->
+    <div
+      class="bg-gradient-to-br from-gray-800 to-gray-750 p-6 rounded-xl shadow-xl"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <div class="p-2 bg-blue-600 rounded-lg">
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-white">Automatyczny odczyt karty</h2>
+      </div>
+
+      <div class="bg-gray-700/50 p-6 rounded-lg border border-gray-600">
+        <div class="flex items-center gap-3 mb-4">
+          <svg
+            class="w-5 h-5 text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <h3 class="font-semibold text-white">Ostatnio zeskanowana karta:</h3>
+        </div>
+
+        <div id="lastScannedCard" class="space-y-3 text-white">
+          {% if last_card %}
+          <div class="flex items-center gap-2">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              ></path>
+            </svg>
+            <p>Nr karty: {{ last_card.rfid_tag }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <p>Czas: {{ last_card.entry_time }}</p>
+          </div>
+          <div class="flex items-center gap-2 text-green-400">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            <p>Wjazd zarejestrowany</p>
+          </div>
+          {% else %}
+          <div class="flex items-center gap-2 text-gray-400">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <p>Oczekiwanie na kartę...</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sekcja ręcznego wprowadzania -->
+    <div
+      class="bg-gradient-to-br from-gray-800 to-gray-750 p-6 rounded-xl shadow-xl"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <div class="p-2 bg-blue-600 rounded-lg">
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-white">Ręczne dodawanie wjazdu</h2>
+      </div>
+
+      <form
+        id="entryForm"
+        method="POST"
+        action="{{ url_for('gate.register_entry') }}"
+        class="space-y-4"
+        onsubmit="handleEntrySubmit(event)"
+      >
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2"
+            >Nr karty dostępu</label
+          >
+          <div class="relative">
+            <input
+              type="text"
+              name="rfid_tag"
+              required
+              class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 text-white pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+              placeholder="Wprowadź numer karty"
+            />
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white p-3 rounded-lg font-medium hover:bg-blue-700 transform hover:scale-[1.02] transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center justify-center gap-2"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+          Zarejestruj wjazd
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lista aktywnych pojazdów -->
+  <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-600 rounded-lg">
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white">
+            Aktywne pojazdy na parkingu
+          </h2>
+          <p class="text-sm text-gray-400">
+            Lista pojazdów obecnie znajdujących się na parkingu
+          </p>
+        </div>
+      </div>
+
+      <!-- Licznik pojazdów -->
+      <div class="px-4 py-2 bg-gray-700 rounded-lg">
+        <span class="text-sm text-gray-300">Łącznie pojazdów:</span>
+        <span class="ml-2 text-lg font-bold text-white"
+          >{{ active_vehicles|length }}</span
+        >
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-700">
+      <table class="w-full">
+        <thead class="bg-gray-700">
+          <tr>
+            <th class="p-4 text-left text-white font-semibold">Nr karty</th>
+            <th class="p-4 text-left text-white font-semibold">Czas wjazdu</th>
+            <th class="p-4 text-left text-white font-semibold">Status</th>
+            <th class="p-4 text-left text-white font-semibold">Akcje</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for vehicle in active_vehicles %}
+          <tr
+            class="hover:bg-gray-750 transition-colors"
+            data-rfid="{{ vehicle.rfid_tag }}"
+          >
+            <td class="p-4">
+              <div class="flex items-center gap-2 text-white">
+                <svg
+                  class="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  ></path>
+                </svg>
+                {{ vehicle.rfid_tag }}
+              </div>
+            </td>
+            <td class="p-4">
+              <div class="flex items-center gap-2 text-white">
+                <svg
+                  class="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                {{ vehicle.entry_time }}
+              </div>
+            </td>
+            <td class="p-4">
+              <span
+                class="px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1 bg-green-600/20 text-green-400 border border-green-500/20"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"
+                ></span>
+                Aktywny
+              </span>
+            </td>
+            <td class="p-4">
+              <button
+                onclick="registerExit('{{ vehicle.rfid_tag }}')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center gap-2"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  ></path>
+                </svg>
+                Zarejestruj wyjazd
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- System powiadomień -->
+<div
+  id="notificationContainer"
+  class="fixed bottom-4 right-4 z-50 space-y-2"
+></div>
+
+<script>
+  // Funkcja do pokazywania powiadomień
+  function showNotification(message, type = "info") {
+    const notification = document.createElement("div");
+    notification.className = `p-4 rounded-lg text-white transform transition-all duration-300 flex items-center gap-3
+            ${
+              type === "success"
+                ? "bg-gradient-to-r from-green-600 to-green-500"
+                : type === "error"
+                ? "bg-gradient-to-r from-red-600 to-red-500"
+                : "bg-gradient-to-r from-blue-600 to-blue-500"
+            }`;
+
+    // Ikona w zależności od typu
+    const icon =
+      type === "success"
+        ? `
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        `
+        : type === "error"
+        ? `
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        `
+        : `
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        `;
+
+    notification.innerHTML = `
+            ${icon}
+            <span class="flex-1">${message}</span>
+            <button onclick="this.parentElement.remove()" class="p-1 hover:bg-black/20 rounded-full transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        `;
+
+    // Dodanie do kontenera
+    const container = document.getElementById("notificationContainer");
+    container.appendChild(notification);
+
+    // Animacja wejścia
+    requestAnimationFrame(() => {
+      notification.style.transform = "translateX(0)";
+      notification.style.opacity = "1";
+    });
+
+    // Automatyczne ukrycie po 5 sekundach
+    setTimeout(() => {
+      notification.style.transform = "translateX(100%)";
+      notification.style.opacity = "0";
+      setTimeout(() => notification.remove(), 300);
+    }, 5000);
+  }
+
+  async function refreshLastCard() {
+    try {
+      const response = await fetch("/gate/last-card");
+      const data = await response.json();
+
+      if (data.success) {
+        const lastCardDiv = document.getElementById("lastScannedCard");
+        lastCardDiv.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                        <p>Nr karty: ${data.rfid_tag}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>Czas: ${data.entry_time}</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-green-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <p>Wjazd zarejestrowany</p>
+                    </div>
+                `;
+      }
+    } catch (error) {
+      console.error("Error fetching last card:", error);
+    }
+  }
+
+  setInterval(refreshLastCard, 1000);
+
+  // Funkcja do rejestracji wyjazdu
+  async function registerExit(rfidTag) {
+    try {
+      const response = await fetch("/gate/exit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rfid_tag: rfidTag }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await updateParkingStatus();
+
+        showNotification(
+          `Wyjazd zarejestrowany! Czas parkowania: ${result.duration} godz.`,
+          "success"
+        );
+
+        const row = document.querySelector(`tr[data-rfid="${rfidTag}"]`);
+        if (row) {
+          row.style.transition = "all 0.3s ease-out";
+          row.style.opacity = "0";
+          row.style.transform = "translateX(100%)";
+
+          setTimeout(() => {
+            row.remove();
+            updateParkingStatus(-1);
+          }, 300);
+        }
+      } else {
+        showNotification(
+          result.error || "Wystąpił błąd podczas rejestracji wyjazdu",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification("Wystąpił błąd podczas rejestracji wyjazdu", "error");
+    }
+  }
+
+  async function updateParkingStatus() {
+    try {
+      const response = await fetch("/gate/parking-status");
+      const data = await response.json();
+
+      // Pobierz elementy UI
+      const availableSpacesElement = document.querySelector(
+        ".px-4.py-2.bg-gray-700 .text-lg.font-bold"
+      );
+      const circleElement = document.querySelector("circle:last-of-type");
+      const percentageElement = document.querySelector(
+        ".absolute.inset-0 .text-2xl.font-bold"
+      );
+      const totalVehiclesElement = document.querySelector(
+        ".bg-gray-700 .text-lg.font-bold"
+      );
+
+      // Oblicz wartości
+      const available = data.available;
+      const total = data.total;
+      const occupied = total - available;
+      const percentage = Math.round((occupied / total) * 100);
+
+      // Aktualizuj dostępne miejsca
+      if (availableSpacesElement) {
+        availableSpacesElement.textContent = `${available}/${total}`;
+
+        // Aktualizuj kolor w zależności od liczby dostępnych miejsc
+        availableSpacesElement.className = `ml-2 text-lg font-bold ${
+          available < 5 ? "text-red-400" : "text-green-400"
+        }`;
+      }
+
+      // Aktualizuj koło postępu
+      if (circleElement) {
+        const circumference = 226.19;
+        const offset = circumference * (1 - occupied / total);
+        circleElement.setAttribute("stroke-dashoffset", offset);
+
+        // Aktualizuj kolor koła
+        circleElement.className = `${
+          available < 5 ? "text-red-400" : "text-green-400"
+        } transition-all duration-500`;
+      }
+
+      // Aktualizuj procenty
+      if (percentageElement) {
+        percentageElement.textContent = `${percentage}%`;
+      }
+
+      // Aktualizuj licznik pojazdów
+      if (totalVehiclesElement) {
+        totalVehiclesElement.textContent = occupied.toString();
+      }
+    } catch (error) {
+      console.error("Błąd aktualizacji statusu:", error);
+    }
+  }
+  // Funkcja do obsługi formularza wjazdu
+  async function handleEntrySubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showNotification(data.message, "success");
+        form.reset();
+
+        // Dodaj nowy wiersz do tabeli
+        const tbody = document.querySelector("tbody");
+        const newRow = createVehicleRow(
+          formData.get("rfid_tag"),
+          new Date().toLocaleString()
+        );
+
+        // Animacja wejścia
+        newRow.style.opacity = "0";
+        newRow.style.transform = "translateX(-100%)";
+        tbody.insertBefore(newRow, tbody.firstChild);
+
+        // Aktywuj animację
+        requestAnimationFrame(() => {
+          newRow.style.transition = "all 0.3s ease-out";
+          newRow.style.opacity = "1";
+          newRow.style.transform = "translateX(0)";
+        });
+        setInterval(updateParkingStatus, 1000);
+        location.reload();
+
+        // Aktualizuj stan parkingu po dodaniu pojazdu
+        await updateParkingStatus();
+      } else {
+        showNotification(data.message, "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showNotification("Wystąpił błąd podczas komunikacji z serwerem", "error");
+    }
+  }
+
+  // Dodanie stylów animacji
+  const style = document.createElement("style");
+  style.textContent = `
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        #notificationContainer > div {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease-out;
+        }
+    `;
+  document.head.appendChild(style);
+
+  function createVehicleRow(rfidTag, entryTime) {
+    const newRow = document.createElement("tr");
+    newRow.className = "hover:bg-gray-750 transition-colors";
+    newRow.dataset.rfid = rfidTag;
+
+    newRow.innerHTML = `
+        <td class="p-4">
+            <div class="flex items-center gap-2 text-white">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                ${rfidTag}
+            </div>
+        </td>
+        <td class="p-4">
+            <div class="flex items-center gap-2 text-white">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                ${entryTime}
+            </div>
+        </td>
+        <td class="p-4">
+            <span class="px-3 py-1 rounded-full text-sm font-medium inline-flex items-center gap-1 bg-green-600/20 text-green-400 border border-green-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                Aktywny
+            </span>
+        </td>
+        <td class="p-4">
+            <button onclick="registerExit('${rfidTag}')" 
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+                Zarejestruj wyjazd
+            </button>
+        </td>
+    `;
+
+    return newRow;
+  }
+  // Na końcu pliku JavaScript
+</script>
+{% endblock %}
